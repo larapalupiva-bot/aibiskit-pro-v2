@@ -1,21 +1,21 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. INISIALISASI (Bagian Paling Penting) ---
+# --- 1. INISIALISASI ---
 PASSWORD_AKSES = "rahasia-aibiskit-2026" 
 
-# Sistem pengecekan kunci API yang lebih kuat
+# Sistem pemanggilan model yang lebih aman
 if "GEMINI_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        # Inisialisasi model secara global agar tidak kena NameError
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Menggunakan nama model lengkap untuk menghindari error 'NotFound'
+        model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
         api_aktif = True
     except Exception as e:
-        st.error(f"Gagal menginisialisasi AI: {e}")
+        st.error(f"Koneksi API Gagal: {e}")
         api_aktif = False
 else:
-    st.error("Kunci API tidak ditemukan di Secrets!")
+    st.error("GEMINI_API_KEY tidak ditemukan di Secrets!")
     api_aktif = False
 
 # --- 2. LOGIKA STANDAR AIBISKIT ---
@@ -27,8 +27,8 @@ def aibiskit_cleaner(user_input, mode="video"):
     6. Motion Scale 2. 7. Occlusion Persistence (No teleporting).
     """
     if mode == "video":
-        return f"ASMR VIDEO prompt: {user_input}. {standard_rules}"
-    return f"ASMR PHOTO prompt: {user_input}. {standard_rules}"
+        return f"Transform to ASMR VIDEO prompt: {user_input}. {standard_rules}"
+    return f"Transform to ASMR PHOTO prompt: {user_input}. {standard_rules}"
 
 # --- 3. ANTARMUKA PENGGUNA ---
 st.title("🚀 AIBisKit Professional Tool")
@@ -40,15 +40,17 @@ if pass_input == PASSWORD_AKSES:
         
         if st.button("🔥 Generate PROMPT VIDEO"):
             if user_query:
-                final_request = aibiskit_cleaner(user_query, "video")
-                # Memanggil model hanya jika api_aktif bernilai True
-                response = model.generate_content(final_request)
-                st.subheader("Hasil Prompt Video:")
-                st.code(response.text)
+                try:
+                    final_request = aibiskit_cleaner(user_query, "video")
+                    response = model.generate_content(final_request)
+                    st.subheader("Hasil Prompt Video:")
+                    st.code(response.text)
+                except Exception as e:
+                    st.error(f"Error saat generate: {e}. Coba klik lagi atau hubungi admin.")
             else:
                 st.warning("Isi deskripsi dulu!")
     else:
-        st.error("Aplikasi tidak bisa berjalan tanpa API Key yang benar di Secrets.")
+        st.error("Cek kembali pengaturan Secrets Anda.")
 else:
     if pass_input != "":
         st.error("Password Salah!")
