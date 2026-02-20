@@ -7,9 +7,18 @@ PASSWORD_AKSES = "rahasia-aibiskit-2026"
 if "GEMINI_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        # Menggunakan nama model paling standar untuk menghindari error 404
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        api_aktif = True
+        
+        # OTOMATIS: Mencari model yang mendukung generateContent
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        if available_models:
+            # Mengutamakan Flash, jika tidak ada pakai model pertama yang tersedia
+            selected_model = next((m for m in available_models if "flash" in m), available_models[0])
+            model = genai.GenerativeModel(selected_model)
+            api_aktif = True
+        else:
+            st.error("Tidak ada model Gemini yang ditemukan di akun Anda.")
+            api_aktif = False
     except Exception as e:
         st.error(f"Koneksi API Gagal: {e}")
         api_aktif = False
@@ -26,8 +35,8 @@ def aibiskit_cleaner(user_input, mode="video"):
     6. Motion Scale 2. 7. Occlusion Persistence (No teleporting).
     """
     if mode == "video":
-        return f"Transform this to ASMR VIDEO prompt: {user_input}. {standard_rules}"
-    return f"Transform this to ASMR PHOTO prompt: {user_input}. {standard_rules}"
+        return f"Transform to ASMR VIDEO prompt: {user_input}. {standard_rules}"
+    return f"Transform to ASMR PHOTO prompt: {user_input}. {standard_rules}"
 
 # --- 3. ANTARMUKA PENGGUNA ---
 st.title("🚀 AIBisKit Professional Tool")
@@ -41,12 +50,11 @@ if pass_input == PASSWORD_AKSES:
             if user_query:
                 try:
                     final_request = aibiskit_cleaner(user_query, "video")
-                    # Eksekusi generate
                     response = model.generate_content(final_request)
-                    st.subheader("Hasil Prompt Video:")
+                    st.subheader(f"Hasil Prompt (Model: {selected_model}):")
                     st.code(response.text)
                 except Exception as e:
-                    st.error(f"Error: {e}. Silakan coba klik sekali lagi.")
+                    st.error(f"Error: {e}")
             else:
                 st.warning("Isi deskripsi dulu!")
     else:
