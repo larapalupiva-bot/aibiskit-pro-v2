@@ -4,12 +4,11 @@ import google.generativeai as genai
 # --- 1. INISIALISASI ---
 PASSWORD_AKSES = "rahasia-aibiskit-2026" 
 
-# Sistem pemanggilan model yang lebih aman
 if "GEMINI_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        # Menggunakan nama model lengkap untuk menghindari error 'NotFound'
-        model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
+        # Menggunakan nama model paling standar untuk menghindari error 404
+        model = genai.GenerativeModel('gemini-1.5-flash')
         api_aktif = True
     except Exception as e:
         st.error(f"Koneksi API Gagal: {e}")
@@ -27,8 +26,8 @@ def aibiskit_cleaner(user_input, mode="video"):
     6. Motion Scale 2. 7. Occlusion Persistence (No teleporting).
     """
     if mode == "video":
-        return f"Transform to ASMR VIDEO prompt: {user_input}. {standard_rules}"
-    return f"Transform to ASMR PHOTO prompt: {user_input}. {standard_rules}"
+        return f"Transform this to ASMR VIDEO prompt: {user_input}. {standard_rules}"
+    return f"Transform this to ASMR PHOTO prompt: {user_input}. {standard_rules}"
 
 # --- 3. ANTARMUKA PENGGUNA ---
 st.title("🚀 AIBisKit Professional Tool")
@@ -42,11 +41,12 @@ if pass_input == PASSWORD_AKSES:
             if user_query:
                 try:
                     final_request = aibiskit_cleaner(user_query, "video")
+                    # Eksekusi generate
                     response = model.generate_content(final_request)
                     st.subheader("Hasil Prompt Video:")
                     st.code(response.text)
                 except Exception as e:
-                    st.error(f"Error saat generate: {e}. Coba klik lagi atau hubungi admin.")
+                    st.error(f"Error: {e}. Silakan coba klik sekali lagi.")
             else:
                 st.warning("Isi deskripsi dulu!")
     else:
